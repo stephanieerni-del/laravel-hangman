@@ -4,12 +4,21 @@
     </x-slot:title>
     
     <h2>{{ $game->name }}</h2>
+
     @if($stage->isCompleted())
         <div>Congratulations!</div>
+        <form method="get" action="{{ route('games.show', ['game' => $game->id, 'next' => 'true']) }}" style="margin-top: 1em;">
+       
+        </form>
     @elseif ($stage->isFailed())
         <div>You failed! The word we are looking for is {{ $stage->challenge->word }}</div>
+       
     @endif
 
+
+    <div>
+        <strong>Current Level:</strong> {{ $stage->player->level ?? 'N/A' }}
+    </div>
     <div>
         Score: {{ $stage->player->score }}
     </div>
@@ -36,12 +45,31 @@
 
             <div>
                 <hr/>
+
+                @if($stage->isCompleted())
+                    @if(($stage->player->level ?? 0) >= 20)
+                        <a href="{{ route('games.index') }}" class="btn btn-primary">Return to main menu</a>
+                    @else
+                        <button type="submit" form="next">Next level</button>
+                    @endif
+                @endif
+
+                 @if($stage->isFailed())
+            <div style="margin-top: 1em;">
+               
+                    
+                    <button type="submit" form="next">Try Again</button>
+                    <a href="{{ route('games.index') }}">Main Menu</a>
+            </div>
+        @endif
                 @if(!$stage->isOver())
-                <button type="submit" name="skip" value=true>
-                    Skip stage
-                </button>
+                    <button type="submit" name="skip" value=true>
+                        Skip stage
+                    </button>
                 @else
-                    <button type="submit" form="next">Next stage</button>
+                    @if(($stage->player->level ?? 0) < 20)
+                        <button type="submit" form="next">Next stage</button>
+                    @endif
                 @endif
             </div>
         </form>

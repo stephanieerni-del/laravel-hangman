@@ -14,7 +14,7 @@ class Challenge extends Model
     /** @use HasFactory<ChallengeFactory> */
     use HasFactory;
 
-    protected $fillable = ['category', 'word'];
+    protected $fillable = ['level', 'category', 'word'];
 
     public function game(): BelongsTo
     {

@@ -11,17 +11,30 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class Player extends Pivot
-{
-    /** @use HasFactory<PlayerFactory> */
+{   /** @use HasFactory<PlayerFactory> */
     use HasFactory;
 
     protected $table = 'players';
 
     public $incrementing = true;
 
-    protected $fillable = ['game_id', 'user_id'];
+    protected $fillable = ['game_id', 'user_id', 'level'];
 
-    public function challenges(): BelongsToMany
+   /**
+     * Get the current level of the player based on the latest stage.
+     *
+     * @return int|null
+     */
+    public function currentLevel(): ?int
+    {
+        $latestStage = $this->stages()->latest('created_at')->first();
+        if ($latestStage && $latestStage->challenge) {
+            return $latestStage->challenge->level;
+        }
+        return null;
+    }
+
+      public function challenges(): BelongsToMany
     {
         return $this->belongsToMany(
             Challenge::class,

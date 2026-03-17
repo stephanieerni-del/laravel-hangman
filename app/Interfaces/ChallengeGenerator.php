@@ -9,5 +9,5 @@ interface ChallengeGenerator
 {
     public function getCategories(): Collection;
 
-    public function generate(): RandomWord;
+    public function generate(int $length = 8): RandomWord;
 }

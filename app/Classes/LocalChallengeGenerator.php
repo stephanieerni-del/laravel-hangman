@@ -23,10 +23,13 @@ class LocalChallengeGenerator implements ChallengeGenerator
         return $this->words->keys();
     }
 
-    public function generate(): RandomWord
+    public function generate(int $length = 8): RandomWord
     {
         $category = $this->words->keys()->random();
-        $word = $this->words[$category]->random();
+        // Try to find a word of the requested length, fallback to any word
+        $word = $this->words[$category]->first(function ($w) use ($length) {
+            return strlen($w) === $length;
+        }) ?? $this->words[$category]->random();
 
         return new RandomWord($category, $word);
     }

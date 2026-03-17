@@ -35,9 +35,7 @@ class AppServiceProvider extends ServiceProvider
 
         App::singleton(
             ChallengeGenerator::class,
-            fn () => config('app.env') == 'production' ?
-                new RandomWordsApiChallengeGenerator
-                : new LocalChallengeGenerator
+            fn () => new RandomWordsApiChallengeGenerator
         );
     }
 }

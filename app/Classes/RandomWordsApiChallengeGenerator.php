@@ -8,14 +8,14 @@ use Illuminate\Support\Facades\Http;
 
 class RandomWordsApiChallengeGenerator implements ChallengeGenerator
 {
-    private array $categories = ['animals', 'countries', 'programming_languages'];
+    private array $categories = ['wordle', 'sports','animals', 'countries', 'programming_languages', 'birds', 'softwares', 'companies', 'games'];
 
     public function getCategories(): Collection
     {
         return collect($this->categories);
     }
 
-    public function generate(): RandomWord
+    public function generate(int $length = 8): RandomWord
     {
         $category = $this->categories[array_rand($this->categories)];
 
@@ -23,7 +23,7 @@ class RandomWordsApiChallengeGenerator implements ChallengeGenerator
             ->get('https://random-words-api.kushcreates.com/api', [
                 'language' => 'en',
                 'category' => $category,
-                'length' => 8,
+                'length' => $length,
                 'type' => 'uppercase',
                 'words' => 1,
             ]);

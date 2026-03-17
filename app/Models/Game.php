@@ -61,7 +61,10 @@ class Game extends Model
 
             if (! $next) {
                 $newChallenge = $challengeGenerator->generate();
+                // Use previous challenge's level if available, otherwise default to 1
+                $level = $after ? $after->level : 1;
                 $next = $this->challenges()->create([
+                    'level' => $level,
                     'category' => $newChallenge->category,
                     'word' => $newChallenge->word,
                 ]);

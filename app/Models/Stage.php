@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Database\Factories\StageFactory;
 use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -24,6 +23,7 @@ class Stage extends Pivot
         'player_id', 'challenge_id',
         'guesses', 'correct_guesses',
         'is_skipped',
+        'remaining_lives',
     ];
 
     public function player(): BelongsTo
@@ -39,9 +39,14 @@ class Stage extends Pivot
     public function lives(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->challenge->lives
-                - $this->guesses->count()
-                + $this->correct_guesses->count()
+            get: function () {
+                if (!is_null($this->remaining_lives)) {
+                    return $this->remaining_lives;
+                }
+                return $this->challenge->lives
+                    - $this->guesses->count()
+                    + $this->correct_guesses->count();
+            }
         );
     }
 
@@ -49,8 +54,19 @@ class Stage extends Pivot
     {
         DB::transaction(function () use ($guess) {
             $this->guesses->push($guess);
-            if ($this->challenge->contains($guess)) {
+            $isCorrect = $this->challenge->contains($guess);
+            if ($isCorrect) {
                 $this->correct_guesses->push($guess);
+            }
+            // If remaining_lives is set, decrement on wrong guess
+            if (!is_null($this->remaining_lives)) {
+                if (!$isCorrect) {
+                    $this->remaining_lives = max(0, $this->remaining_lives - 1);
+                }
+                // If stage is over (win or lose), clear remaining_lives so normal calculation resumes for next stage
+                if ($this->remaining_lives <= 0 || $this->isCompleted()) {
+                    $this->remaining_lives = null;
+                }
             }
             $this->save();
 

@@ -22,6 +22,7 @@ return new class extends Migration
         Schema::create('challenges', function (Blueprint $table) {
             $table->id();
             $table->foreignUuid('game_id')->constrained();
+            $table->unsignedTinyInteger('level'); // Level 1-20
             $table->string('category');
             $table->string('word');
             $table->timestamps();

@@ -48,5 +48,6 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/logout', [AuthController::class, 'logout'])->name('auth.logout');
+     Route::post('/games/{game}/retry', [GameController::class, 'retry'])->middleware(['verified'])->name('games.retry');
     Route::resource('games', GameController::class)->except(['edit'])->middleware(['verified']);
 });

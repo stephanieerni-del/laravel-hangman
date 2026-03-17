@@ -46,7 +46,7 @@ class AuthController extends Controller
     {
         $options = [
             'prompt' => 'select_account consent',
-            'hd' => 'cvsu.edu.ph',
+            // 'hd' => 'cvsu.edu.ph',
         ];
 
         return Socialite::driver('google')

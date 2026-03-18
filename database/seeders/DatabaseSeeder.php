@@ -17,9 +17,15 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        User::query()->updateOrCreate(
+            ['email' => 'test@example.com'],
+            User::factory()->raw([
+                'name' => 'test',
+            ])
+        );
+
+        $this->call(LevelPointSeeder::class);
+        $this->call(GameSeeder::class);
+        $this->call(CompleteGameSeeder::class); // proceed to level 19 or 20
     }
 }

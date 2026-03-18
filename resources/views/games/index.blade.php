@@ -52,18 +52,19 @@
                 &#9876; WORLD MAP &#9876;
             </h2>
 
-            <div class="flex justify-end mb-2 mr-17 gap-3">
+            <div class="flex justify-end mb-2 mr-17 gap-3 mt-4">
                 <!-- Open the modal using ID.showModal() method -->
                 <button
                     class="cursor-pointer border border-yellow-700 bg-yellow-500 px-5 py-2 hover:bg-yellow-900/40 uppercase tracking-widest text-sm"
-                    onclick="my_modal_1.showModal()">open modal</button>
-                <dialog id="my_modal_1" class="modal ">
+                    onclick="my_modal_2.showModal()">Point System</button>
+                <dialog id="my_modal_2" class="modal ">
                     <div class="modal-box bg-amber-400/90">
-                        <h3 class="text-lg font-bold">Hello, Princess!</h3>
                         <div
                             class="mb-5 border-2 border-yellow-700 bg-yellow-950/35 px-4 py-4 text-sm uppercase tracking-wide">
                             <div class="flex items-center justify-between gap-3 flex-wrap mb-3">
-                                <h3 class="text-base font-bold tracking-[0.3em] text-yellow-300">Score Guide</h3>
+                                <h3 class="w-full text-base text-center font-bold tracking-[0.3em] text-yellow-300">
+                                    Point System
+                                </h3>
                                 @if (!empty($scoreGuide['level']))
                                     <span class="text-yellow-200">Current Level {{ $scoreGuide['level'] }}</span>
                                 @endif
@@ -104,6 +105,41 @@
                     class="border border-yellow-700 bg-yellow-500 px-5 py-2 hover:bg-yellow-900/40 uppercase tracking-widest text-sm">
                     Leaderboard
                 </a>
+
+                <button
+                    class="cursor-pointer border border-yellow-700 bg-yellow-500 px-5 py-2 hover:bg-yellow-900/40 uppercase tracking-widest text-sm"
+                    onclick="my_modal_1.showModal()">About Us</button>
+                <dialog id="my_modal_1" class="modal modal-bottom sm:modal-middle ">
+                    <div class="modal-box bg-amber-400/90">
+                        <div
+                            class="mb-5 border-2 border-yellow-700 bg-yellow-950/35 px-4 py-4 text-sm uppercase tracking-wide">
+                            <div class="flex items-center justify-between gap-3 flex-wrap mb-3">
+                                <h3 class="text-base text-center font-bold tracking-[0.3em] text-yellow-300">About Us
+                                </h3>
+                            </div>
+
+                            <div
+                                class="border border-yellow-700 bg-black/30 px-4 py-4 normal-case text-xl tracking-normal text-center text-yellow-100/90 space-y-2">
+                                <p class="font-bold text-yellow-200 uppercase tracking-wide">Contributors</p>
+                                <p>Erni, Stephanie V.</p>
+                                <p>De leon, John Carlo H.</p>
+                                <p>Javier, John Ervin B.</p>
+                                <p>Ulangkaya, Nina Klarisse A.</p>
+                            </div>
+
+                            <p
+                                class="mt-3 text-center text-xl font-bold normal-case tracking-normal text-yellow-200/80">
+                                Output of 40hr Laravel training led by <br> Sir Russel L. Villacarlos.
+                            </p>
+                        </div>
+                        <div class="modal-action">
+                            <form method="dialog">
+                                <!-- if there is a button in form, it will close the modal -->
+                                <button class="btn border border-yellow-900 bg-yellow-400 ">Close</button>
+                            </form>
+                        </div>
+                    </div>
+                </dialog>
 
                 <a href="{{ route('auth.logout') }}"
                     class="border border-yellow-700 bg-yellow-500 px-5 py-2 hover:bg-yellow-900/40 uppercase tracking-widest text-sm">

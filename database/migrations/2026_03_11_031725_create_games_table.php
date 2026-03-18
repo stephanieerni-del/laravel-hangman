@@ -11,6 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
+
+       Schema::create('level_points', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedTinyInteger('level')->unique();
+            $table->string('difficulty', 10);
+            $table->unsignedTinyInteger('x');
+            $table->unsignedTinyInteger('y');
+            $table->timestamps();
+        });
+        
         Schema::create('games', function (Blueprint $table) {
             $table->uuid('id')->unique();
             $table->foreignId('level_point_id')->nullable()->constrained()->unique();
@@ -47,15 +57,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-
-          Schema::create('level_points', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedTinyInteger('level')->unique();
-            $table->string('difficulty', 10);
-            $table->unsignedTinyInteger('x');
-            $table->unsignedTinyInteger('y');
-            $table->timestamps();
-        });
+     
     }
 
     /**
@@ -69,5 +71,4 @@ return new class extends Migration
         Schema::dropIfExists('challenges');
         Schema::dropIfExists('games');
     }
-        
 };

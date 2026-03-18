@@ -49,4 +49,5 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('/logout', [AuthController::class, 'logout'])->name('auth.logout');
     Route::resource('games', GameController::class)->except(['edit'])->middleware(['verified']);
+    Route::get('/leaderboard', [GameController::class, 'leaderboard'])->name('leaderboard')->middleware(['verified']);
 });

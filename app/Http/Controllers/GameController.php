@@ -9,6 +9,7 @@ use App\Models\Game;
 use App\Models\LevelPoint;
 use App\Models\Stage;
 use App\Models\User;
+use RuntimeException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -150,7 +151,13 @@ class GameController extends Controller
         //     abort(403);
         // }
 
-        $stage = $game->play($request->user(), boolval($request->input('next', false)));
+        try {
+            $stage = $game->play($request->user(), boolval($request->input('next', false)));
+        } catch (RuntimeException $e) {
+            return redirect()->route('games.index')->withErrors([
+                'game' => $e->getMessage(),
+            ]);
+        }
 
         $maxLevel = (int) (LevelPoint::query()->max('level') ?? 20);
         $isMaxLevelComplete = ($game->levelPoint?->level ?? 0) >= $maxLevel && $stage->isCompleted();
@@ -196,7 +203,13 @@ class GameController extends Controller
             abort(403);
         }
 
-        $stage = $game->play($request->user());
+        try {
+            $stage = $game->play($request->user());
+        } catch (RuntimeException $e) {
+            return redirect()->route('games.index')->withErrors([
+                'game' => $e->getMessage(),
+            ]);
+        }
 
         if ($request->input('skip')) {
             $stage->skip();

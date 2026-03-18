@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Interfaces\ChallengeGenerator;
+use RuntimeException;
 use Database\Factories\GameFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -65,10 +66,55 @@ class Game extends Model
                 ->first();
 
             if (!$next) {
-                $newChallenge = $challengeGenerator->generate();
+                $maxAttempts = 50;
+                $attempt = 0;
+                $newChallenge = null;
+
+                while ($attempt < $maxAttempts) {
+                    $candidate = $challengeGenerator->generate();
+                    $normalizedWord = mb_strtoupper(trim($candidate->word));
+
+                    $isUsedInAnotherLevel = Challenge::query()
+                        ->join('games', 'games.id', '=', 'challenges.game_id')
+                        ->whereRaw('UPPER(challenges.word) = ?', [$normalizedWord])
+                        ->where('games.level_point_id', '!=', $this->level_point_id)
+                        ->exists();
+
+                    if (!$isUsedInAnotherLevel) {
+                        $newChallenge = $candidate;
+                        break;
+                    }
+
+                    $attempt++;
+                }
+
+                if (!$newChallenge) {
+                    $sameLevelWord = Challenge::query()
+                        ->join('games', 'games.id', '=', 'challenges.game_id')
+                        ->where('games.level_point_id', $this->level_point_id)
+                        ->inRandomOrder()
+                        ->first([
+                            'challenges.category',
+                            'challenges.word',
+                            'challenges.description',
+                        ]);
+
+                    if ($sameLevelWord) {
+                        $newChallenge = new \App\Classes\RandomWord(
+                            $sameLevelWord->category,
+                            $sameLevelWord->word,
+                            $sameLevelWord->description ?? ''
+                        );
+                    }
+                }
+
+                if (!$newChallenge) {
+                    throw new RuntimeException('No available words left for this level. Please add more unique words.');
+                }
+
                 $next = $this->challenges()->create([
                     'category' => $newChallenge->category,
-                    'word' => $newChallenge->word,
+                    'word' => mb_strtoupper(trim($newChallenge->word)),
                     'description' => $newChallenge->description,
                 ]);
             }

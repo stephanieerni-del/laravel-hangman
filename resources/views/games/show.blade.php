@@ -105,7 +105,8 @@
                         </div>
                     @endif
 
-                    <form method="post" action="{{ route('games.update', compact('game')) }}" class="space-y-4">
+                    <form id="guess-form" method="post" action="{{ route('games.update', compact('game')) }}"
+                        class="space-y-4">
                         @method('put')
                         @csrf
 
@@ -124,17 +125,22 @@
                         @endif
 
                         <div
-                            class="flex justify-between pt-4 border-t border-yellow-700 text-sm uppercase tracking-wide flex-wrap gap-2">
-                            @if ($stage->isOver())
-                                <button type="submit" form="next"
-                                    class="border border-yellow-700 px-3 py-2 hover:bg-yellow-900/40">
-                                    Play again !
-                                </button>
-                            @endif
+                            class="flex items-center justify-between pt-4 border-t border-yellow-700 text-sm uppercase tracking-wide flex-wrap gap-2">
+                            <div class="min-w-32">
+                                @if ($stage->isOver())
+                                    <button type="submit" form="next"
+                                        class="border border-yellow-700 px-3 py-2 hover:bg-yellow-900/40">
+                                        Play again! [Space]
+                                    </button>
+                                @else
+                                    <span class="inline-block border border-transparent px-3 py-2 invisible">Play again
+                                        !</span>
+                                @endif
+                            </div>
 
-                            <a href="{{ route('games.index') }}"
+                            <a id="back-to-map-link" href="{{ route('games.index') }}"
                                 class="inline-flex items-center border border-yellow-700 px-3 py-2 hover:bg-yellow-900/40">
-                                Back to Map
+                                Back to Map [Esc]
                             </a>
                         </div>
 
@@ -339,6 +345,60 @@
                 if (backgrounds[selected]) {
                     background.style.backgroundImage = `url('${backgrounds[selected]}')`;
                 }
+            });
+        })();
+
+        (() => {
+            const guessForm = document.getElementById('guess-form');
+            if (!guessForm) {
+                return;
+            }
+
+            document.addEventListener('keydown', (event) => {
+                if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) {
+                    return;
+                }
+
+                const target = event.target;
+                if (target instanceof HTMLElement) {
+                    const editable = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target
+                        .isContentEditable;
+                    if (editable) {
+                        return;
+                    }
+                }
+
+                const key = (event.key || '').toLowerCase();
+
+                if (key === ' ' || key === 'spacebar' || event.code === 'Space') {
+                    const playAgainButton = document.querySelector('button[form="next"]:not([disabled])');
+                    if (playAgainButton) {
+                        event.preventDefault();
+                        playAgainButton.click();
+                    }
+                    return;
+                }
+
+                if (key === 'escape' || event.code === 'Escape') {
+                    const backToMapLink = document.getElementById('back-to-map-link');
+                    if (backToMapLink) {
+                        event.preventDefault();
+                        backToMapLink.click();
+                    }
+                    return;
+                }
+
+                if (!/^[a-z]$/.test(key)) {
+                    return;
+                }
+
+                const button = guessForm.querySelector(`button[name="guess"][value="${key}"]:not([disabled])`);
+                if (!button) {
+                    return;
+                }
+
+                event.preventDefault();
+                button.click();
             });
         })();
 

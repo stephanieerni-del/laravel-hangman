@@ -24,8 +24,9 @@ class DatabaseSeeder extends Seeder
             ])
         );
 
-        $this->call(LevelPointSeeder::class);
-        $this->call(GameSeeder::class);
-        $this->call(CompleteGameSeeder::class); // proceed to level 19 or 20
+        //use 'test' for username ...'password' for password 
+        $this->call(LevelPointSeeder::class); //default.. defined x , y ,difficulty and level
+        $this->call(GameSeeder::class); // can hide this if you want to create own game
+        $this->call(CompleteGameSeeder::class); // proceed to level 20 (HACKER!!!!)
     }
 }

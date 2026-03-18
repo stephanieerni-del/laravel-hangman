@@ -43,7 +43,7 @@ class Challenge extends Model
 
     public function contains(string $guess)
     {
-        return str_contains($this->word, $guess);
+        return str_contains(mb_strtolower($this->word), mb_strtolower($guess));
     }
 
     public function next(): Challenge

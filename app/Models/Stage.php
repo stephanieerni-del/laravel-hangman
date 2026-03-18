@@ -40,33 +40,62 @@ class Stage extends Pivot
     {
         return Attribute::make(
             get: fn () => $this->challenge->lives
-                - $this->guesses->count()
-                + $this->correct_guesses->count()
+                - $this->getGuesses()->count()
+                + collect($this->correct_guesses ?? [])->count()
         );
     }
 
     public function guess(string $guess)
     {
         DB::transaction(function () use ($guess) {
-            $this->guesses->push($guess);
-            if ($this->challenge->contains($guess)) {
-                $this->correct_guesses->push($guess);
+            if ($this->isOver()) {
+                return;
             }
+
+            $normalizedGuess = mb_strtolower(trim($guess));
+            $guesses = $this->getGuesses();
+            $correctGuesses = collect($this->correct_guesses ?? []);
+
+            $guesses->push($normalizedGuess);
+            if ($this->challenge->contains($normalizedGuess)) {
+                $correctGuesses->push($normalizedGuess);
+            }
+
+            $this->guesses = $guesses;
+            $this->correct_guesses = $correctGuesses;
             $this->save();
 
-            $this->player->increment('score', $this->isCompleted() ? 1 : 0);
+            if ($this->isCompleted()) {
+                $this->applyScoreDelta($this->winScore());
+
+                return;
+            }
+
+            if ($this->isFailed()) {
+                $this->applyScoreDelta(-$this->losePenalty());
+            }
         });
 
     }
 
     public function skip()
     {
-        $this->update(['is_skipped' => true]);
+        if ($this->isOver()) {
+            return;
+        }
+
+        DB::transaction(function () {
+            $this->update(['is_skipped' => true]);
+            $this->applyScoreDelta(-$this->playAgainPenalty());
+        });
     }
 
     public function isCompleted(): bool
     {
-        return ! str_contains($this, '_');
+        $correctGuesses = collect($this->correct_guesses ?? []);
+        $wordCharacters = collect(mb_str_split(mb_strtolower($this->challenge->word)))->unique();
+
+        return $wordCharacters->every(fn (string $character) => $correctGuesses->contains($character));
     }
 
     public function isFailed(): bool
@@ -86,18 +115,20 @@ class Stage extends Pivot
 
     public function getGuesses(): Collection
     {
-        return $this->guesses;
+        return collect($this->guesses ?? []);
     }
 
     public function isAlreadyUsed(string $guess): bool
     {
-        return $this->guesses->contains($guess);
+        return $this->getGuesses()->contains($guess);
     }
 
     public function __toString(): string
     {
+        $correctGuesses = collect($this->correct_guesses ?? []);
+
         return collect(mb_str_split($this->challenge->word))
-            ->map(fn ($char) => $this->correct_guesses->contains($char) ? $char : '_')
+            ->map(fn (string $char) => $correctGuesses->contains(mb_strtolower($char)) ? mb_strtoupper($char) : '_')
             ->implode(' ');
     }
 
@@ -113,6 +144,57 @@ class Stage extends Pivot
         }
 
         return $this;
+    }
+
+    private function applyScoreDelta(int $delta): void
+    {
+        if ($delta === 0) {
+            return;
+        }
+
+        $this->player()->increment('score', $delta);
+    }
+
+    private function difficultyPoints(): int
+    {
+        $level = $this->player?->game?->levelPoint?->level;
+        if ($level) {
+            return match (true) {
+                $level <= 5 => 4,
+                $level <= 10 => 5,
+                $level <= 15 => 6,
+                default => 7,
+            };
+        }
+
+        $difficulty = mb_strtolower((string) ($this->player?->game?->levelPoint?->difficulty ?? ''));
+
+        return match ($difficulty) {
+            'easy' => 4,
+            'medium' => 5,
+            'hard' => 6,
+            'extreme' => 7,
+            default => 4,
+        };
+    }
+
+    private function playAgainPenalty(): int
+    {
+        return max(0, $this->difficultyPoints() - 2);
+    }
+
+    private function losePenalty(): int
+    {
+        return $this->difficultyPoints();
+    }
+
+    private function winScore(): int
+    {
+        $remainingLives = max(0, $this->lives);
+        $baseScore = $this->difficultyPoints() * $remainingLives;
+        $perfectLifeBonus = $remainingLives === (int) $this->challenge->lives ? 5 : 0;
+
+        return $baseScore + $perfectLifeBonus;
     }
 
     protected function casts(): array

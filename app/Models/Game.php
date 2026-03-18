@@ -20,11 +20,16 @@ class Game extends Model
 
     public $incrementing = false;
 
-    protected $fillable = ['name', 'starting_lives'];
+    protected $fillable = ['name', 'starting_lives', 'level_point_id'];
 
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function levelPoint(): BelongsTo
+    {
+        return $this->belongsTo(LevelPoint::class);
     }
 
     public function challenges(): HasMany

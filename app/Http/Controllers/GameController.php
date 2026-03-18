@@ -140,9 +140,9 @@ class GameController extends Controller
 
         $isCreator = ! is_null($request->user()->created_games->find($game->id));
 
-        if (! Gate::allows('view', [$game, $isCreator])) {
-            abort(403);
-        }
+        // if (! Gate::allows('view', [$game, $isCreator])) {
+        //     abort(403);
+        // }
 
         $stage = $game->play($request->user(), boolval($request->input('next', false)));
 

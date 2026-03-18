@@ -12,9 +12,13 @@
 <body class="h-screen" data-theme="light">
 
     {{-- Background music --}}
+
+
     <audio id="bg-music" loop preload="auto">
         <source src="{{ asset('assets/audio/bg_music.mp3') }}" type="audio/mpeg">
     </audio>
+
+
 
     {{-- Mute / Unmute button --}}
     <button id="music-toggle" title="Toggle music"
@@ -44,7 +48,9 @@
             const MUTED_KEY = 'bgMusicMuted';
 
             let muted = localStorage.getItem(MUTED_KEY) === 'true';
-            let hasRestoredTime = false;
+            let restoreSettled = false;
+
+            console.log('[AUDIO] Page loaded. localStorage bgMusicTime:', localStorage.getItem(TIME_KEY));
 
             function applyState() {
                 audio.muted = muted;
@@ -53,68 +59,64 @@
             }
 
             function restorePlaybackPosition() {
-                if (hasRestoredTime || !Number.isFinite(audio.duration) || audio.duration <= 0) {
+                if (restoreSettled) {
+                    return;
+                }
+
+                if (!Number.isFinite(audio.duration) || audio.duration <= 0) {
                     return;
                 }
 
                 const saved = parseFloat(localStorage.getItem(TIME_KEY) || '0');
-                if (!Number.isFinite(saved) || saved <= 0) {
-                    hasRestoredTime = true;
-                    return;
+                console.log('[AUDIO] Restore: saved time from localStorage:', saved, 'duration:', audio.duration);
+                if (Number.isFinite(saved) && saved > 0) {
+                    const maxSeek = Math.max(0, audio.duration - 0.25);
+                    audio.currentTime = Math.min(saved, maxSeek);
+                    console.log('[AUDIO] Restored currentTime to:', audio.currentTime);
                 }
 
-                const maxSeek = Math.max(0, audio.duration - 0.5);
-                audio.currentTime = Math.min(saved, maxSeek);
-                hasRestoredTime = true;
-            }
-
-            // Attempt autoplay on first interaction or page load
-            function startMusic() {
-                restorePlaybackPosition();
-                audio.play().catch(() => {});
+                restoreSettled = true;
             }
 
             function persistPlaybackPosition() {
-                if (!audio.paused && Number.isFinite(audio.currentTime)) {
-                    localStorage.setItem(TIME_KEY, String(audio.currentTime));
+                if (!restoreSettled || !Number.isFinite(audio.currentTime)) {
+                    if (!restoreSettled) {
+                        console.log('[AUDIO] Persist blocked: restore not settled yet');
+                    }
+                    return;
                 }
+
+                // Prevent replacing a valid saved value with initial 0 during startup.
+                if (audio.currentTime <= 0.01 && (audio.paused || audio.readyState < 2)) {
+                    console.log('[AUDIO] Persist blocked: currentTime is ~0 and audio paused/not-ready');
+                    return;
+                }
+
+                console.log('[AUDIO] Persisting currentTime:', audio.currentTime);
+                localStorage.setItem(TIME_KEY, String(audio.currentTime));
+            }
+
+            function startMusic() {
+                console.log('[AUDIO] startMusic called, muted:', muted);
+                restorePlaybackPosition();
+                if (muted) {
+                    return;
+                }
+
+                audio.play().catch(() => {});
             }
 
             applyState();
 
-            audio.addEventListener('loadedmetadata', restorePlaybackPosition, {
-                once: true
-            });
+            if (audio.readyState >= 1) {
+                startMusic();
+            } else {
+                audio.addEventListener('loadedmetadata', startMusic, {
+                    once: true
+                });
+            }
 
-            audio.addEventListener('canplay', restorePlaybackPosition, {
-                once: true
-            });
-
-            // If metadata is already available, restore immediately.
-            restorePlaybackPosition();
-
-            audio.addEventListener('timeupdate', persistPlaybackPosition);
-
-            // Extra backup in case timeupdate does not fire near navigation time.
-            setInterval(persistPlaybackPosition, 750);
-
-            audio.addEventListener('ended', function() {
-                localStorage.setItem(TIME_KEY, '0');
-            });
-
-            window.addEventListener('beforeunload', persistPlaybackPosition);
-            window.addEventListener('pagehide', persistPlaybackPosition);
-
-            document.addEventListener('visibilitychange', function() {
-                if (document.visibilityState === 'hidden') {
-                    persistPlaybackPosition();
-                }
-            });
-
-            // Try to autoplay immediately; browsers may block this until interaction
-            startMusic();
-
-            // Fallback: start on first user interaction if autoplay was blocked
+            // Fallback: browsers that block autoplay will start after first interaction.
             document.addEventListener('click', function onFirstClick() {
                 startMusic();
                 document.removeEventListener('click', onFirstClick);
@@ -122,26 +124,35 @@
                 once: true
             });
 
+            audio.addEventListener('timeupdate', persistPlaybackPosition);
+            audio.addEventListener('pause', persistPlaybackPosition);
+            audio.addEventListener('seeked', persistPlaybackPosition);
+
+            window.addEventListener('beforeunload', persistPlaybackPosition);
+            window.addEventListener('pagehide', persistPlaybackPosition);
+            document.addEventListener('visibilitychange', function() {
+                if (document.visibilityState === 'hidden') {
+                    persistPlaybackPosition();
+                }
+            });
+
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 muted = !muted;
                 localStorage.setItem(MUTED_KEY, String(muted));
                 applyState();
-                if (!muted) startMusic();
+
+                if (muted) {
+                    persistPlaybackPosition();
+                    audio.pause();
+                    return;
+                }
+
+                startMusic();
             });
         })();
     </script>
 
-    {{-- <h1>{{ config('app.name') }}</h1> --}}
-    {{-- <div>
-        @guest
-            <a href="{{ route('login') }}">[Login]</a>
-        @endguest
-        @auth
-            <a href="{{ route('auth.logout') }}">[Logout]</a>
-        @endauth
-    </div> --}}
-    {{-- <hr /> --}}
     {{ $slot }}
 </body>
 

@@ -36,7 +36,7 @@ Route::prefix('/verify')->group(function () {
 Route::middleware('guest')->group(function () {
     Route::name('registration.')->group(function () {
         Route::get('/registration', [RegistrationController::class, 'show'])->name('show');
-        Route::post('/registration', [RegistrationController::class, 'save'])->name('save');
+        // Route::post('/registration', [RegistrationController::class, 'save'])->name('save');
     });
 
     Route::get('/', [AuthController::class, 'show'])->name('login');

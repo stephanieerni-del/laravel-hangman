@@ -29,6 +29,30 @@
                         @enderror
                     </div>
 
+                    <div class="mb-6">
+                        <label for="difficulty" class="block text-yellow-300 text-xs uppercase tracking-wider mb-1">
+                            &#9670; Difficulty
+                        </label>
+                        <select id="difficulty" name="difficulty" required
+                            class="w-full bg-gray-950 text-yellow-100 border-2 border-yellow-800 px-3 py-2 text-sm rounded-none outline-none focus:border-yellow-400">
+                            @php
+                                $difficulties = ['easy', 'medium', 'hard', 'extreme'];
+                            @endphp
+                            @foreach ($difficulties as $difficulty)
+                                @php
+                                    $remaining = $remainingSlots[$difficulty] ?? 0;
+                                @endphp
+                                <option value="{{ $difficulty }}" @selected(old('difficulty', 'easy') === $difficulty)
+                                    @disabled($remaining <= 0)>
+                                    {{ ucfirst($difficulty) }} ({{ $remaining }}/5 remaining)
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('difficulty')
+                            <div class="text-red-400 text-xs mt-1">&#9888; {{ $message }}</div>
+                        @enderror
+                    </div>
+
                     <div class="mb-4">
                         <button type="submit"
                             class="cursor-pointer w-full bg-yellow-700 hover:bg-yellow-600 active:bg-yellow-800 text-black font-bold uppercase tracking-widest text-sm py-2 px-4 border-2 border-yellow-400 rounded-none transition-colors"

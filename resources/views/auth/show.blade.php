@@ -2,8 +2,61 @@
     <x-slot:title>
         Log-in
     </x-slot:title>
+    <style>
+        .login-intro-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 60;
+            background-image: url('{{ asset('assets/home_expanded2.png') }}');
+            background-size: cover;
+            background-position: center bottom;
+            background-repeat: no-repeat;
+            transform-origin: center bottom;
+            animation: introBottomToTopZoomOut 2.25s cubic-bezier(0.2, 0.3, 0.2, 1) forwards;
+        }
+
+        .login-content {
+            opacity: 0;
+            animation: contentFadeIn 0.45s ease-out 1.95s forwards;
+        }
+
+        @keyframes introBottomToTopZoomOut {
+
+            0% {
+                opacity: 1;
+                transform: scale(1.5);
+                background-position: center bottom;
+            }
+
+            60% {
+                opacity: 1;
+                transform: scale(1.0);
+                background-position: center top;
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(1);
+                background-position: center top;
+                pointer-events: none;
+            }
+
+        }
+
+        @keyframes contentFadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
     <div>
-        <div class="h-screen w-full flex items-center justify-center"
+        <div class="login-intro-overlay" aria-hidden="true"></div>
+
+        <div class="login-content h-screen w-full flex items-center justify-center"
             style="background-image: url('{{ asset('assets/home_plain.png') }}'); background-size: cover; background-position: center; background-repeat: no-repeat;">
 
             <div class="w-full max-w-sm bg-black/85 border-4 border-yellow-600 p-8 font-mono"

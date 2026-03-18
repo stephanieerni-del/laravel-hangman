@@ -1,39 +1,69 @@
 <x-app>
+    <style>
+        .fade-in {
+            opacity: 0;
+            animation: fadeInAnimation 2.5s ease forwards;
+        }
+
+        @keyframes fadeInAnimation {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .current-level-glow {
+            animation: currentLevelGlow 1.50s ease-in-out infinite alternate;
+        }
+
+        @keyframes currentLevelGlow {
+            from {
+                box-shadow: 0 0 0.35rem currentColor;
+            }
+
+            to {
+                box-shadow: 0 0 2rem currentColor;
+            }
+        }
+
+        /* .fade-in-delay {
+            opacity: 0;
+            animation: fadeInAnimation 10s ease forwards;
+            animation-delay: 2s;
+        } */
+    </style>
+
     <x-slot:title>
         Available Games
     </x-slot:title>
 
-    @php
-        $levelPoints = [
-            ['level' => 1, 'difficulty' => 'easy', 'x' => 13, 'y' => 39],
-            ['level' => 2, 'difficulty' => 'easy', 'x' => 16, 'y' => 46],
-            ['level' => 3, 'difficulty' => 'easy', 'x' => 22, 'y' => 48],
-            ['level' => 4, 'difficulty' => 'easy', 'x' => 29, 'y' => 50],
-            ['level' => 5, 'difficulty' => 'easy', 'x' => 24, 'y' => 58],
-            ['level' => 6, 'difficulty' => 'medium', 'x' => 25, 'y' => 71],
-            ['level' => 7, 'difficulty' => 'medium', 'x' => 32, 'y' => 75],
-            ['level' => 8, 'difficulty' => 'medium', 'x' => 36, 'y' => 84],
-            ['level' => 9, 'difficulty' => 'medium', 'x' => 44, 'y' => 95],
-            ['level' => 10, 'difficulty' => 'medium', 'x' => 52, 'y' => 90],
-            ['level' => 11, 'difficulty' => 'hard', 'x' => 59, 'y' => 85],
-            ['level' => 12, 'difficulty' => 'hard', 'x' => 54, 'y' => 78],
-            ['level' => 13, 'difficulty' => 'hard', 'x' => 47, 'y' => 72],
-            ['level' => 14, 'difficulty' => 'hard', 'x' => 52, 'y' => 63],
-            ['level' => 15, 'difficulty' => 'hard', 'x' => 58, 'y' => 61],
-            ['level' => 16, 'difficulty' => 'extreme', 'x' => 64, 'y' => 57],
-            ['level' => 17, 'difficulty' => 'extreme', 'x' => 68, 'y' => 51],
-            ['level' => 18, 'difficulty' => 'extreme', 'x' => 71, 'y' => 41],
-            ['level' => 19, 'difficulty' => 'extreme', 'x' => 76, 'y' => 35],
-            ['level' => 20, 'difficulty' => 'extreme', 'x' => 71, 'y' => 26],
-        ];
-    @endphp
-    <div class="relative min-h-screen w-full overflow-hidden">
+    <div class="relative min-h-screen w-full overflow-hidden fade-in " id="container">
         <div class="absolute inset-0 bg-cover bg-center bg-no-repeat blur-[4px] scale-105"
             style="background-image: url('{{ asset('assets/home_plain.png') }}');"></div>
-        <div class="relative z-10 mx-auto max-w-6xl text-yellow-100 font-mono">
+
+
+        <div class="relative z-10 mx-auto max-w-6xl text-yellow-100 font-mono pt-8">
+
+
             <h2 class="text-yellow-800 text-4xl font-bold text-center uppercase tracking-widest mb-1 pt-4">
                 &#9876; WORLD MAP &#9876;
             </h2>
+
+            <div class="flex justify-end mb-2 mr-17 gap-3">
+                <a href="{{ route('leaderboard') }}"
+                    class="border border-yellow-700 bg-yellow-500 px-5 py-2 hover:bg-yellow-900/40 uppercase tracking-widest text-sm">
+                    Leaderboard
+                </a>
+    
+                <a href="{{ route('auth.logout') }}"
+                    class="border border-yellow-700 bg-yellow-500 px-5 py-2 hover:bg-yellow-900/40 uppercase tracking-widest text-sm">
+                    Logout
+                </a>
+            </div>
+
 
             <div class="relative mx-auto w-full max-w-5xl border-4 border-yellow-700 bg-black/70 overflow-hidden"
                 style="box-shadow: 8px 8px 0 #000;">
@@ -49,12 +79,26 @@
                                 'hard' => 'bg-orange-800 text-orange-100 border-orange-300 ring-orange-200/40',
                                 default => 'bg-red-800 text-red-100 border-red-300 ring-red-200/40',
                             };
+
+                            $isDisabled = !$point['has_game'] || $point['is_locked'];
+                            $disabledStateClass = !$point['has_game']
+                                ? 'bg-zinc-700 text-zinc-300 border-zinc-500 ring-zinc-400/30 opacity-70 cursor-not-allowed'
+                                : 'bg-zinc-800 text-zinc-200 border-yellow-400 ring-yellow-300/40 opacity-80 cursor-not-allowed';
+                            $stateClass = $isDisabled ? $disabledStateClass : 'cursor-pointer hover:scale-110';
+                            $isCurrentLevel = $point['is_current_level'];
+
                         @endphp
 
-                        <button type="button"
-                            class="cursor-pointer absolute -translate-x-1/2 -translate-y-1/2 w-8 h-8 md:w-8 md:h-8 border-2 ring-2 rounded-sm rotate-45 {{ $pointClass }} shadow-[2px_2px_0_#000] hover:scale-110 transition-transform"
+                        <button type="button" @disabled($isDisabled)
+                            class="absolute -translate-x-1/2 -translate-y-1/2 {{ !$isCurrentLevel ? 'w-9 h-9 md:w-9 md:h-9' : 'w-15 h-15 md:w-15 md:h-15' }} border-2 ring-2 rounded-sm rotate-45 {{ $isDisabled ? $stateClass : $pointClass . ' ' . $stateClass }} {{ $isCurrentLevel ? 'current-level-glow z-20' : '' }} shadow-[5px_10px_0_#000] transition-transform "
                             style="left: {{ $point['x'] }}%; top: {{ $point['y'] }}%;"
-                            title="Level {{ $point['level'] }} - {{ ucfirst($point['difficulty']) }}">
+                            title="Level {{ $point['level'] }} - {{ ucfirst($point['difficulty']) }}{{ $point['is_locked'] ? ' (Locked)' : (!$point['has_game'] ? ' (Unavailable)' : '') }}{{ $isCurrentLevel ? ' (Current Level)' : '' }}">
+                            @if ($isCurrentLevel)
+                                <img src="{{ asset('assets/princess.png') }}"
+                                    alt="Avatar for level {{ $point['level'] }}"
+                                    class="absolute left-1/2 -translate-x-1/2 -rotate-45 object-contain select-none pointer-events-none h-[40px]"
+                                    style="top: -4.25rem; width: 12rem; height: 12rem;" />
+                            @endif
                             <span
                                 class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-45 text-[10px] md:text-xs font-black leading-none">
                                 {{ $point['level'] }}
@@ -80,7 +124,8 @@
                 <h2 class="text-2xl font-bold uppercase tracking-widest mb-4">My Games</h2>
 
                 <div class="mb-5 text-sm uppercase tracking-wide">
-                    <a href="{{ route('games.create') }}" class="text-yellow-400 hover:text-yellow-200">[New Game]</a> |
+                    <a href="{{ route('games.create') }}" class="text-yellow-400 hover:text-yellow-200">[New Game]</a>
+                    |
                     @if ($owned)
                         <a href="{{ route('games.index') }}" class="text-yellow-400 hover:text-yellow-200">[Show All
                             Games]</a>
@@ -90,17 +135,83 @@
                     @endif
                 </div>
 
-                @forelse ($games as $game)
-                    <div class="mb-2">
-                        {{ $loop->iteration }}.
-                        <a href="{{ route('games.show', compact('game')) }}"
-                            class="text-yellow-300 hover:text-yellow-100 underline">
-                            {{ $game->name }} {{ $game->creator->is(auth()->user()) ? '*' : '' }}
-                        </a>
-                    </div>
-                @empty
+                @if ($games->isEmpty())
                     <div>No Games</div>
-                @endforelse
+                @else
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse border-2 border-yellow-700 text-sm">
+                            <thead>
+                                <tr class="bg-yellow-900/50 uppercase tracking-wide">
+                                    <th class="border border-yellow-700 px-3 py-2 text-left">#</th>
+                                    <th class="border border-yellow-700 px-3 py-2 text-left">Game</th>
+                                    <th class="border border-yellow-700 px-3 py-2 text-left">Level</th>
+                                    <th class="border border-yellow-700 px-3 py-2 text-left">Points</th>
+                                    <th class="border border-yellow-700 px-3 py-2 text-left">Difficulty</th>
+                                    <th class="border border-yellow-700 px-3 py-2 text-left">Compass Direction</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($games as $game)
+                                    @php
+                                        $gameLevel = $game->levelPoint?->level;
+                                        $isLocked = $gameLevel && $gameLevel > $currentUnlockedLevel;
+                                    @endphp
+
+                                    <tr
+                                        class="odd:bg-black/20 even:bg-black/40 {{ $isLocked ? 'opacity-70 border-l-4 border-yellow-500' : '' }}">
+                                        <td class="border border-yellow-700 px-3 py-2">{{ $loop->iteration }}</td>
+                                        <td class="border border-yellow-700 px-3 py-2">
+                                            @if ($isLocked)
+                                                <span class="text-zinc-300">{{ $game->name }}
+                                                    {{ $game->creator->is(auth()->user()) ? '*' : '' }}</span>
+                                                <span
+                                                    class="ml-2 text-[10px] md:text-xs uppercase tracking-wide text-yellow-400 border border-yellow-500 px-1 py-0.5">Locked</span>
+                                            @else
+                                                <a href="{{ route('games.show', compact('game')) }}"
+                                                    class="text-yellow-300 hover:text-yellow-100 underline">
+                                                    {{ $game->name }}
+                                                    {{ $game->creator->is(auth()->user()) ? '*' : '' }}
+                                                </a>
+                                            @endif
+                                        </td>
+                                        <td class="border border-yellow-700 px-3 py-2">
+                                            {{ $game->levelPoint?->level ?? '-' }}</td>
+                                        <td class="border border-yellow-700 px-3 py-2">
+                                            {{-- {{ isset($completedGameIds[$game->id]) ? $game->levelPoint?->level ?? '-' : '-' }} --}}
+                                            {{ isset($game->gamers()->where('user_id', auth()->id())->latest()->first()->player->score) ? $game->gamers()->where('user_id', auth()->id())->latest()->first()->player->score : '-' }}
+
+                                        </td>
+                                        <td class="border border-yellow-700 px-3 py-2 uppercase">
+                                            {{ $game->levelPoint?->difficulty ?? '-' }}
+                                        </td>
+                                        <td class="border border-yellow-700 px-3 py-2">
+                                            @if ($game->levelPoint)
+                                                @php
+                                                    $xOffset = $game->levelPoint->x - 50;
+                                                    $yOffset = $game->levelPoint->y - 50;
+                                                    $bearing = fmod(rad2deg(atan2($xOffset, -$yOffset)) + 360, 360);
+
+                                                    if ($bearing >= 315 || $bearing < 45) {
+                                                        $direction = 'North';
+                                                    } elseif ($bearing >= 45 && $bearing < 135) {
+                                                        $direction = 'East';
+                                                    } elseif ($bearing >= 135 && $bearing < 225) {
+                                                        $direction = 'South';
+                                                    } else {
+                                                        $direction = 'West';
+                                                    }
+                                                @endphp
+                                                {{ $direction }} ({{ number_format($bearing, 0) }}°)
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
             </div>
         </div>
     </div>

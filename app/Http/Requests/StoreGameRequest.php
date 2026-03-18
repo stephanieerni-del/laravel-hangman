@@ -27,6 +27,10 @@ class StoreGameRequest extends FormRequest
                 'required',
                 'unique:games',
             ],
+            'difficulty' => [
+                'required',
+                'in:easy,medium,hard,extreme',
+            ],
         ];
     }
 
@@ -35,6 +39,7 @@ class StoreGameRequest extends FormRequest
         return [
             'required' => 'The :attribute is required.',
             'unique' => 'The :attribute is already taken',
+            'in' => 'The selected :attribute is invalid.',
         ];
     }
 
@@ -42,6 +47,7 @@ class StoreGameRequest extends FormRequest
     {
         return [
             'name' => 'game name',
+            'difficulty' => 'difficulty',
         ];
     }
 }

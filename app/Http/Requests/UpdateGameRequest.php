@@ -28,7 +28,11 @@ class UpdateGameRequest extends FormRequest
 
         return [
             'guess' => [
-                Rule::notIn($stage->guesses),
+                'required',
+                'string',
+                'size:1',
+                'regex:/^[a-zA-Z]$/',
+                Rule::notIn($stage->getGuesses()),
             ],
         ];
     }

@@ -29,7 +29,8 @@ class RandomWordsApiChallengeGenerator implements ChallengeGenerator
             ]);
 
         $word = $response[0]['word'];
+        $description = 'A random ' . str_replace('_', ' ', $category) . ' word generated from the API.';
 
-        return new RandomWord($category, $word);
+        return new RandomWord($category, $word, $description);
     }
 }

@@ -15,7 +15,9 @@ use Illuminate\Support\Facades\Gate;
 
 class GameController extends Controller
 {
-    public function __construct(private readonly ChallengeGenerator $challengeGenerator) {}
+    public function __construct(private readonly ChallengeGenerator $challengeGenerator)
+    {
+    }
 
     /**
      * Display a listing of the resource.
@@ -36,7 +38,7 @@ class GameController extends Controller
 
         $stages = Stage::query()
             ->where('is_skipped', false)
-            ->whereHas('player', fn ($query) => $query->where('user_id', $request->user()->id))
+            ->whereHas('player', fn($query) => $query->where('user_id', $request->user()->id))
             ->with([
                 'challenge:id,game_id,word',
                 'player:id,game_id,user_id',
@@ -49,11 +51,11 @@ class GameController extends Controller
             $game = $stage->player?->game;
             $level = $game?->levelPoint?->level;
 
-            if (! $stage->challenge) {
+            if (!$stage->challenge) {
                 continue;
             }
 
-            if (! $stage->isCompleted()) {
+            if (!$stage->isCompleted()) {
                 continue;
             }
 
@@ -64,19 +66,23 @@ class GameController extends Controller
 
         $levelPoints = LevelPoint::query()
             ->withExists('game')
+            ->with('game:id,level_point_id')
             ->orderBy('level')
-            ->get(['level', 'difficulty', 'x', 'y'])
-            ->map(fn (LevelPoint $point) => [
+            ->get(['id', 'level', 'difficulty', 'x', 'y'])
+            ->map(fn(LevelPoint $point) => [
                 'level' => $point->level,
                 'difficulty' => $point->difficulty,
                 'x' => $point->x,
                 'y' => $point->y,
+                'game_id' => $point->game?->id,
                 'has_game' => (bool) $point->game_exists, //based on Games table
                 'is_locked' => $point->level > $currentUnlockedLevel,
                 'is_current_level' => $currentUnlockedLevel === $point->level,
             ])->all();
 
-        return view('games.index', compact('games', 'owned', 'levelPoints', 'completedGameIds', 'currentUnlockedLevel'));
+        $scoreGuide = $this->buildScoreGuide();
+
+        return view('games.index', compact('games', 'owned', 'levelPoints', 'completedGameIds', 'currentUnlockedLevel', 'scoreGuide'));
     }
 
     /**
@@ -111,7 +117,7 @@ class GameController extends Controller
                 ->first();
         });
 
-        if (! $levelPoint) {
+        if (!$levelPoint) {
             return back()
                 ->withInput()
                 ->withErrors([
@@ -138,7 +144,7 @@ class GameController extends Controller
             ]);
         }
 
-        $isCreator = ! is_null($request->user()->created_games->find($game->id));
+        $isCreator = !is_null($request->user()->created_games->find($game->id));
 
         // if (! Gate::allows('view', [$game, $isCreator])) {
         //     abort(403);
@@ -160,8 +166,9 @@ class GameController extends Controller
         }
 
         $disabledKeys = $stage->isOver() ? true : $stage->getGuesses()->all();
+        // $scoreGuide = $this->buildScoreGuide($game->levelPoint?->level);
 
-        return view('games.show', compact('game', 'stage', 'disabledKeys', 'isMaxLevelComplete', 'leaderboard'));
+        return view('games.show', compact('game', 'stage', 'disabledKeys', 'isMaxLevelComplete', 'leaderboard', ));
     }
 
     /**
@@ -183,9 +190,9 @@ class GameController extends Controller
             ]);
         }
 
-        $isCreator = ! is_null($request->user()->created_games->find($game->id));
+        $isCreator = !is_null($request->user()->created_games->find($game->id));
 
-        if (! Gate::allows('update', [$game, $isCreator])) {
+        if (!Gate::allows('update', [$game, $isCreator])) {
             abort(403);
         }
 
@@ -227,7 +234,7 @@ class GameController extends Controller
 
         $stages = Stage::query()
             ->where('is_skipped', false)
-            ->whereHas('player', fn ($query) => $query->where('user_id', $user->id))
+            ->whereHas('player', fn($query) => $query->where('user_id', $user->id))
             ->with([
                 'challenge:id,game_id,word',
                 'player:id,game_id,user_id',
@@ -239,15 +246,15 @@ class GameController extends Controller
         foreach ($stages as $stage) {
             $level = $stage->player?->game?->levelPoint?->level;
 
-            if (! $level || ! $stage->challenge || $stage->is_skipped) {
+            if (!$level || !$stage->challenge || $stage->is_skipped) {
                 continue;
             }
 
             $correctGuesses = collect($stage->correct_guesses ?? []);
             $wordCharacters = collect(mb_str_split(mb_strtolower($stage->challenge->word)))->unique();
-            $isCompleted = $wordCharacters->every(fn (string $character) => $correctGuesses->contains($character));
+            $isCompleted = $wordCharacters->every(fn(string $character) => $correctGuesses->contains($character));
 
-            if (! $isCompleted) {
+            if (!$isCompleted) {
                 continue;
             }
 
@@ -256,7 +263,7 @@ class GameController extends Controller
 
         $maxLevel = (int) (LevelPoint::query()->max('level') ?? 1);
 
-        return min($highestCompletedLevel + 1, $maxLevel); 
+        return min($highestCompletedLevel + 1, $maxLevel);
     }
 
     private function isLevelLocked(User $user, Game $game): bool
@@ -264,10 +271,50 @@ class GameController extends Controller
         $game->loadMissing('levelPoint');
 
         $targetLevel = $game->levelPoint?->level;
-        if (! $targetLevel) {
+        if (!$targetLevel) {
             return false;
         }
 
         return $targetLevel > $this->resolveCurrentUnlockedLevel($user);
+    }
+
+    private function buildScoreGuide(): array
+    {
+        $bands = [
+            [
+                'label' => 'Easy',
+                'levels' => '1-5',
+                'points' => 4,
+                'play_again_penalty' => 2,
+                'lose_penalty' => 4,
+            ],
+            [
+                'label' => 'Medium',
+                'levels' => '6-10',
+                'points' => 5,
+                'play_again_penalty' => 3,
+                'lose_penalty' => 5,
+            ],
+            [
+                'label' => 'Hard',
+                'levels' => '11-15',
+                'points' => 6,
+                'play_again_penalty' => 4,
+                'lose_penalty' => 6,
+            ],
+            [
+                'label' => 'Extreme',
+                'levels' => '16-20',
+                'points' => 7,
+                'play_again_penalty' => 5,
+                'lose_penalty' => 7,
+            ],
+        ];
+
+        return [
+            'bands' => $bands,
+            'perfect_lives_bonus' => 5,
+            'starting_lives' => 6,
+        ];
     }
 }

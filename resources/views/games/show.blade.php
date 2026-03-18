@@ -41,88 +41,109 @@
                 style="background-image: url('{{ asset('assets/escaped_home.png') }}');"></div>
         @endif
 
-        <div class="relative z-10 mx-auto max-w-6xl text-yellow-100 font-mono px-4 py-5 min-h-screen flex flex-col justify-center">
+        <div
+            class="relative z-10 mx-auto max-w-6xl text-yellow-100 font-mono px-4 py-5 min-h-screen flex flex-col justify-center">
 
             <div id="game-content" class="{{ $isMaxLevelComplete ? 'game-content-fadeout' : '' }}">
-            <h2 class="text-yellow-800 text-4xl font-bold text-center uppercase tracking-widest mb-6">
-                {{ $game->name }}
-            </h2>
+                <h2 class="text-yellow-800 text-4xl font-bold text-center uppercase tracking-widest mb-6">
+                    {{ $game->name }}
+                </h2>
 
 
-            <div class="mb-6 min-h-56 md:min-h-72 flex items-center justify-center">
-                @if ($stage->isCompleted())
-                    <div class="win-photo-loop flex flex-col items-center gap-2">
-                        <img src="{{ asset('assets/congrats.png') }}" alt="Completed"
-                            class="mx-auto max-h-52 md:max-h-28 w-auto">
-                        <img src="{{ asset('assets/you-win.png') }}" alt="Completed"
-                            class="mx-auto max-h-44 md:max-h-28 w-auto">
-                    </div>
-                @elseif ($stage->lives <= 0)
-                    <img src="{{ asset('assets/hanggirl-nolife.gif') }}" alt="No Lives"
-                        class="mx-auto max-h-52 md:max-h-64 w-auto">
-                @elseif ($wrongGuessAnimation)
-                    <img src="{{ $wrongGuessAnimation }}" alt="Wrong Guess" class="mx-auto max-h-52 md:max-h-64 w-auto">
-                @endif
-
-            </div>
-
-            <div class="bg-black/70 border-2 border-yellow-700 p-4 md:p-6" style="box-shadow: 8px 8px 0 #000;">
-                <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-5">
-                    <div class="space-y-1 text-sm uppercase tracking-wide">
-                        <div>Category: <span class="text-yellow-300">{{ $stage->challenge->category }}</span></div>
-                        <div>Score: <span class="text-yellow-300">{{ $stage->player->score }}</span></div>
-                        <div>Remaining Lives: <span class="text-yellow-300">{{ $stage->lives }}</span></div>
-                    </div>
-
+                <div class="mb-6 min-h-48 md:min-h-48 flex items-center justify-center">
+                    @if ($stage->isCompleted())
+                        <div class="win-photo-loop flex flex-col items-center gap-2">
+                            <img src="{{ asset('assets/congrats.png') }}" alt="Completed"
+                                class="mx-auto max-h-52 md:max-h-28 w-auto">
+                            <img src="{{ asset('assets/you-win.png') }}" alt="Completed"
+                                class="mx-auto max-h-44 md:max-h-28 w-auto">
+                        </div>
+                    @elseif ($stage->lives <= 0)
+                        <img src="{{ asset('assets/hanggirl-nolife.gif') }}" alt="No Lives"
+                            class="mx-auto max-h-52 md:max-h-64 w-auto">
+                    @elseif ($wrongGuessAnimation)
+                        <img src="{{ $wrongGuessAnimation }}" alt="Wrong Guess"
+                            class="mx-auto max-h-52 md:max-h-64 w-auto">
+                    @endif
 
                 </div>
 
+                <div class="bg-black/70 border-2 border-yellow-700 p-4 md:p-6 text-xl"
+                    style="box-shadow: 8px 8px 0 #000;">
+                    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-5">
+                        <div class="w-full space-y-1 text-xl uppercase tracking-wide">
+                            <div class="w-full text-right">
+                                <div class="flex items-center justify-end gap-1 flex-wrap mb-1">
+                                    Lives:
+                                    @for ($i = 0; $i < $stage->lives; $i++)
+                                        <span class="life-icon text-2xl"
+                                            style="animation-delay: {{ $i * 0.13 }}s">❤️</span>
+                                    @endfor
+                                    @for ($i = $stage->lives; $i < $game->starting_lives; $i++)
+                                        <span class="text-2xl" style="opacity:0.35;">🤍</span>
+                                    @endfor
+                                </div>
+                                <div>Score: <span class="text-yellow-300">{{ $stage->player->score }}</span></div>
+                            </div>
+                            @if (!$stage->isFailed())
+                                <div>Category: <span class="text-yellow-300">{{ $stage->challenge->category }}</span>
+                                </div>
 
-                @if (!$stage->isFailed())
-                    <div
-                        class="mb-5 border-2 border-yellow-700 bg-black/60 px-4 py-5 text-center text-3xl md:text-4xl tracking-[0.35em] uppercase">
-                        {{ $stage }}
+                                @if ($stage->challenge->description)
+                                    <div class="normal-case tracking-normal text-yellow-200/90">
+                                        Hint: <span id="hint-text">{{ $stage->challenge->description }}</span>
+                                    </div>
+                                @endif
+                            @endif
+                        </div>
                     </div>
-                @endif
 
-                <form method="post" action="{{ route('games.update', compact('game')) }}" class="space-y-4">
-                    @method('put')
-                    @csrf
-
-                    @error('guess')
-                        <div class="border border-red-500 bg-red-900/30 px-3 py-2 text-red-200">{{ $message }}</div>
-                    @enderror
-
-                    @if (!$stage->isOver())
-                        <x-keyboard :disabled-keys="$disabledKeys" />
-                    @elseif ($stage->lives <= 0)
-                        <div class="flex items-center justify-center py-2">
-                            <img src="{{ asset('assets/gameover-youlose.gif') }}" alt="Game Over"
-                                class="mx-auto max-h-52 md:max-h-64 w-auto">
+                    @if (!$stage->isFailed())
+                        <div
+                            class="mb-5 border-2 border-yellow-700 bg-black/60 px-4 py-5 text-center text-3xl md:text-4xl tracking-[0.35em] uppercase">
+                            {{ $stage }}
                         </div>
                     @endif
 
-                    <div
-                        class="flex justify-between pt-4 border-t border-yellow-700 text-sm uppercase tracking-wide flex flex-wrap gap-2">
-                        @if ($stage->isOver())
-                            <button type="submit" form="next"
-                                class="border border-yellow-700 px-3 py-2 hover:bg-yellow-900/40">
-                                Play again !
-                            </button>
+                    <form method="post" action="{{ route('games.update', compact('game')) }}" class="space-y-4">
+                        @method('put')
+                        @csrf
+
+                        @error('guess')
+                            <div class="border border-red-500 bg-red-900/30 px-3 py-2 text-red-200">{{ $message }}
+                            </div>
+                        @enderror
+
+                        @if (!$stage->isOver())
+                            <x-keyboard :disabled-keys="$disabledKeys" />
+                        @elseif ($stage->lives <= 0)
+                            <div class="flex items-center justify-center py-2">
+                                <img src="{{ asset('assets/gameover-youlose.gif') }}" alt="Game Over"
+                                    class="mx-auto max-h-52 md:max-h-64 w-auto">
+                            </div>
                         @endif
 
-                        <a href="{{ route('games.index') }}"
-                            class="inline-flex items-center border border-yellow-700 px-3 py-2 hover:bg-yellow-900/40">
-                            Back to Map
-                        </a>
-                    </div>
+                        <div
+                            class="flex justify-between pt-4 border-t border-yellow-700 text-sm uppercase tracking-wide flex-wrap gap-2">
+                            @if ($stage->isOver())
+                                <button type="submit" form="next"
+                                    class="border border-yellow-700 px-3 py-2 hover:bg-yellow-900/40">
+                                    Play again !
+                                </button>
+                            @endif
 
-                </form>
+                            <a href="{{ route('games.index') }}"
+                                class="inline-flex items-center border border-yellow-700 px-3 py-2 hover:bg-yellow-900/40">
+                                Back to Map
+                            </a>
+                        </div>
 
-                <form id="next" method="get" action="{{ route('games.show', compact('game')) }}">
-                    <input type="hidden" name="next" value="true" />
-                </form>
-            </div>
+                    </form>
+
+                    <form id="next" method="get" action="{{ route('games.show', compact('game')) }}">
+                        <input type="hidden" name="next" value="true" />
+                    </form>
+                </div>
             </div>{{-- end #game-content --}}
 
             @if ($isMaxLevelComplete && $leaderboard && $leaderboard->isNotEmpty())
@@ -135,15 +156,19 @@
                     </div>
                     <div class="w-full max-w-xl bg-black/70 border-2 border-yellow-700 p-4 md:p-6"
                         style="box-shadow: 8px 8px 0 #000;">
-                        <h3 class="text-2xl font-bold uppercase tracking-widest text-center text-yellow-300 mb-4">Leaderboard</h3>
+                        <h3 class="text-2xl font-bold uppercase tracking-widest text-center text-yellow-300 mb-4">
+                            Leaderboard</h3>
                         <ol class="space-y-2">
                             @foreach ($leaderboard as $index => $entry)
-                                <li class="flex items-center justify-between border border-yellow-700 bg-black/40 px-4 py-3 text-sm uppercase tracking-wide">
+                                <li
+                                    class="flex items-center justify-between border border-yellow-700 bg-black/40 px-4 py-3 text-sm uppercase tracking-wide">
                                     <span class="flex items-center gap-3">
-                                        <span class="text-yellow-500 font-bold w-6 text-right">{{ $index + 1 }}.</span>
+                                        <span
+                                            class="text-yellow-500 font-bold w-6 text-right">{{ $index + 1 }}.</span>
                                         <span>{{ $entry->name }}</span>
                                     </span>
-                                    <span class="text-yellow-300 font-bold">{{ $entry->total_score }} pt{{ $entry->total_score != 1 ? 's' : '' }}</span>
+                                    <span class="text-yellow-300 font-bold">{{ $entry->total_score }}
+                                        pt{{ $entry->total_score != 1 ? 's' : '' }}</span>
                                 </li>
                             @endforeach
                         </ol>
@@ -191,8 +216,13 @@
         }
 
         @keyframes escapedBgFade {
-            from { opacity: 0; }
-            to   { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         /* Game content fades out starting at 3s over 2s, then collapses */
@@ -207,12 +237,14 @@
                 max-height: 2000px;
                 overflow: hidden;
             }
+
             99% {
                 opacity: 0;
                 transform: scale(0.97);
                 max-height: 2000px;
                 overflow: hidden;
             }
+
             100% {
                 opacity: 0;
                 transform: scale(0.97);
@@ -221,6 +253,55 @@
                 visibility: hidden;
                 padding: 0;
                 margin: 0;
+            }
+        }
+
+        .life-icon {
+            display: inline-block;
+            transform-origin: center;
+            animation: heartbeat 1.5s ease-in-out infinite;
+        }
+
+        @keyframes heartbeat {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            15% {
+                transform: scale(1.30);
+            }
+
+            30% {
+                transform: scale(1);
+            }
+
+            45% {
+                transform: scale(1.18);
+            }
+
+            60% {
+                transform: scale(1);
+            }
+        }
+
+        .hint-cursor {
+            display: inline-block;
+            font-weight: 300;
+            color: #fde68a;
+            /* animation: blink 0.75s step-start infinite; */
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
             }
         }
 
@@ -236,6 +317,7 @@
                 opacity: 0;
                 transform: translateY(40px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -259,5 +341,27 @@
                 }
             });
         })();
+
+        // (() => {
+        //     const el = document.getElementById('hint-text');
+        //     const cursor = document.getElementById('hint-cursor');
+        //     if (!el) return;
+        //     const text = el.dataset.text || '';
+        //     let i = 0;
+        //     const speed = 30;
+
+        //     function type() {
+        //         if (i < text.length) {
+        //             el.textContent += text.charAt(i++);
+        //             setTimeout(type, speed);
+        //         } else {
+        //             if (cursor) {
+        //                 cursor.style.animation = 'none';
+        //                 cursor.style.opacity = '0';
+        //             }
+        //         }
+        //     }
+        //     setTimeout(type, 400);
+        // })();
     </script>
 </x-app>

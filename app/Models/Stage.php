@@ -21,8 +21,10 @@ class Stage extends Pivot
     public $incrementing = true;
 
     protected $fillable = [
-        'player_id', 'challenge_id',
-        'guesses', 'correct_guesses',
+        'player_id',
+        'challenge_id',
+        'guesses',
+        'correct_guesses',
         'is_skipped',
     ];
 
@@ -39,9 +41,9 @@ class Stage extends Pivot
     public function lives(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->challenge->lives
-                - $this->getGuesses()->count()
-                + collect($this->correct_guesses ?? [])->count()
+            get: fn() => $this->challenge->lives
+            - $this->getGuesses()->count()
+            + collect($this->correct_guesses ?? [])->count()
         );
     }
 
@@ -95,7 +97,7 @@ class Stage extends Pivot
         $correctGuesses = collect($this->correct_guesses ?? []);
         $wordCharacters = collect(mb_str_split(mb_strtolower($this->challenge->word)))->unique();
 
-        return $wordCharacters->every(fn (string $character) => $correctGuesses->contains($character));
+        return $wordCharacters->every(fn(string $character) => $correctGuesses->contains($character));
     }
 
     public function isFailed(): bool
@@ -128,7 +130,7 @@ class Stage extends Pivot
         $correctGuesses = collect($this->correct_guesses ?? []);
 
         return collect(mb_str_split($this->challenge->word))
-            ->map(fn (string $char) => $correctGuesses->contains(mb_strtolower($char)) ? mb_strtoupper($char) : '_')
+            ->map(fn(string $char) => $correctGuesses->contains(mb_strtolower($char)) ? mb_strtoupper($char) : '_')
             ->implode(' ');
     }
 
@@ -152,7 +154,17 @@ class Stage extends Pivot
             return;
         }
 
-        $this->player()->increment('score', $delta);
+        $player = Player::query()->lockForUpdate()->find($this->player_id);
+
+        if (!$player) {
+            return;
+        }
+
+        Player::query()
+            ->whereKey($player->getKey())
+            ->update([
+                'score' => max(0, $player->score + $delta),
+            ]);
     }
 
     private function difficultyPoints(): int

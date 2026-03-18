@@ -23,6 +23,7 @@ class ChallengeFactory extends Factory
         return [
             'category' => $challenge->category,
             'word' => $challenge->word,
+            'description' => $challenge->description,
         ];
     }
 }

@@ -14,7 +14,7 @@ class Challenge extends Model
     /** @use HasFactory<ChallengeFactory> */
     use HasFactory;
 
-    protected $fillable = ['category', 'word'];
+    protected $fillable = ['category', 'word', 'description'];
 
     public function game(): BelongsTo
     {
@@ -37,7 +37,7 @@ class Challenge extends Model
     public function lives(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->game->starting_lives
+            get: fn() => $this->game->starting_lives
         );
     }
 
@@ -54,7 +54,22 @@ class Challenge extends Model
     public function category(): Attribute
     {
         return Attribute::make(
-            get: fn (string $category) => ucwords(str_replace('_', ' ', $category))
+            get: fn(string $category) => ucwords(str_replace('_', ' ', $category))
+        );
+    }
+
+    public function description(): Attribute
+    {
+        return Attribute::make(
+            get: function (?string $description): string {
+                if (!empty($description)) {
+                    return $description;
+                }
+
+                $category = str_replace('_', ' ', $this->attributes['category'] ?? 'general');
+
+                return 'A random ' . $category . ' word.';
+            }
         );
     }
 }

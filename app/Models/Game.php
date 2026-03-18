@@ -59,16 +59,17 @@ class Game extends Model
             $next = $this->challenges()
                 ->when(
                     $after,
-                    fn ($query) => $query->where('created_at', '>', $after->created_at)
+                    fn($query) => $query->where('created_at', '>', $after->created_at)
                 )
                 ->orderBy('created_at')
                 ->first();
 
-            if (! $next) {
+            if (!$next) {
                 $newChallenge = $challengeGenerator->generate();
                 $next = $this->challenges()->create([
                     'category' => $newChallenge->category,
                     'word' => $newChallenge->word,
+                    'description' => $newChallenge->description,
                 ]);
             }
 
